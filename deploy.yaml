@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: castai-rebalancer
+  namespace: castai-agent
+type: Opaque
+data:
+  API_KEY: >-  
+    <EnterCASTAIAPIKey-Base64Encoded>
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rebalancer
+  namespace: castai-agent
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: castai-agent
+  name: rebalancer
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rebalancer
+  namespace: castai-agent
+subjects:
+- kind: ServiceAccount
+  name: rebalancer
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: rebalancer
+  apiGroup: ""
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rebalancer
+rules:
+  - verbs:
+      - get
+      - patch
+      - update
+      - delete
+      - escalate
+    apiGroups:
+      - ''
+    resources:
+      - namespaces
+    resourceNames:
+      - castai-agent
+      - kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rebalancer
+subjects:
+  - kind: ServiceAccount
+    name: rebalancer
+    namespace: castai-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rebalancer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rebalancer-admin
+subjects:
+  - kind: ServiceAccount
+    name: rebalancer
+    namespace: castai-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rebalancer
+  namespace: castai-agent
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          tolerations:
+            - operator: Exists
+          serviceAccountName: rebalancer
+          containers:
+          - name: rebalancer
+            image: castai/rebalancer:latest
+            imagePullPolicy: Always
+            envFrom:
+              - secretRef:
+                  name: castai-rebalancer
+            env:
+              - name: CLUSTER_ID
+                valueFrom:
+                  configMapKeyRef:
+                    name: castai-cluster-controller
+                    key: CLUSTER_ID
+          restartPolicy: OnFailure
+      backoffLimit: 2
+---
