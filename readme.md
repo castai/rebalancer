@@ -7,7 +7,7 @@ This utility currently is on best effort support by @Phil Andrews through commun
 Run this command to install Rebalancer CronJobs
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/castai/hibernate/main/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/castai/rebalancer/main/deploy.yaml
 ```
 
 ### Change API key
@@ -24,7 +24,7 @@ use this value to update Secret
 apiVersion: v1
 kind: Secret
 metadata:
-  name: castai-Hibernate
+  name: castai-rebalancer
   namespace: castai-agent
 type: Opaque
 data:
@@ -35,41 +35,13 @@ data:
 OR for convenience use one liner
 
 ```shell
-kubectl get secret castai-hibernate -n castai-agent -o json | jq --arg API_KEY "$(echo -n 9834958-CASTAI-API-KEY-REPLACE-ME-5k2345jhk2 | base64)" '.data["API_KEY"]=$API_KEY' | kubectl apply -f -
+kubectl get secret castai-rebalancer -n castai-agent -o json | jq --arg API_KEY "$(echo -n 9834958-CASTAI-API-KEY-REPLACE-ME-5k2345jhk2 | base64)" '.data["API_KEY"]=$API_KEY' | kubectl apply -f -
 ```
-
-### Set Cloud env variable
-
-AKS is set by default, but requires changing in both CronJobs "Cloud" env variable to [EKS|GKE|AKS]
 
 ## How it works
 
-Hibernate-pause Job will 
- - Disable Unscheduled Pod Policy (to prevent growing cluster)
- - Prepare Hibernation node (node that will stay hosting essential components)
- - Mark essential Deployments with Hibernation toleration (system critical and with NAMESPACES_TO_KEEP env var)
- - Delete all other nodes (only hibernation node should stay running)
-
-Hibernate-resume Job will
- - Renable Unscheduled Pod Policy to allow cluster to expand to needed size
-
-Override default hibernate-node size
- - Set the HIBERNATE_NODE environment variable to override the default node sizing selections. Make sure the size selected is appropriate for your cloud. 
-
-Override default NAMESPACES_TO_KEEP
- - Set the NAMESPACES_TO_KEEP environment variable to override, "opa,istio"" 
-
-## TODO
- - Auto detect Cloud 
-
-# Development
-
-Create [aks|eks|gke] K8s cluster 
-- create file hack/aks/local.auto.tfvars from example
-- run "make aks"
-- connect to cluster / switch kubectl context
-
-Run code locally
-- copy cluster_id from console.cast.ai to .env file (example .env.example)
-- uncomment in main.py # local_development = True
-- run end2end tests
+Rebalancer Job will
+ - Query the CAST AI estimated savings on whether a rebalance is recommended
+ - If recommended, rebalance plan will be created with all nodes
+ - Rebalance will be run against all existing nodes
+ - Default schedule is every 6 hours. 
