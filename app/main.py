@@ -12,7 +12,8 @@ def get_savings_report(cluster_id, headers):
     if get_savings.status_code != 200:
         print("Unable to retrieve savings report, exiting")
         exit
-    if get_savings.json()["recommendations"]["Layman"]["savingsPercentage"] > os.environ("SAVINGS_THRESHOLD"):
+    if get_savings.json()["recommendations"]["Layman"]["savingsPercentage"] > os.environ["SAVINGS_THRESHOLD"]:
+        print("Savings percentage is: " + get_savings.json()["recommendations"]["Layman"]["savingsPercentage"])
         return True
     else:
         return False
