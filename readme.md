@@ -10,6 +10,8 @@ Run this command to install Rebalancer CronJobs
 kubectl apply -f https://raw.githubusercontent.com/castai/rebalancer/main/deploy.yaml
 ```
 
+The default threshold for trigginer rebalanece is 15% of savings. This can be adjusted in the environment variables for the deployment. 
+
 ### Change API key
 
 Create API token with Full Access permissions and encode base64
