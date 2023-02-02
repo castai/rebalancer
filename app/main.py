@@ -12,8 +12,10 @@ def get_savings_report(cluster_id, headers):
     if get_savings.status_code != 200:
         print("Unable to retrieve savings report, exiting")
         exit
-
-    return get_savings.json()["isRebalancingRecommended"]
+    if get_savings.json()["recommendations"]["Layman"]["savingsPercentage"] > os.environ("SAVINGS_THRESHOLD"):
+        return True
+    else:
+        return False
 
 def get_nodes(cluster_id, headers):
 

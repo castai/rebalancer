@@ -111,6 +111,8 @@ spec:
                   configMapKeyRef:
                     name: castai-cluster-controller
                     key: CLUSTER_ID
+              - name: "SAVINGS_THRESHOLD"
+                value: 15
           restartPolicy: OnFailure
       backoffLimit: 2
 ---
